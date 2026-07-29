@@ -1,0 +1,2081 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sonrisa Clara · App de cámara intraoral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --cream:#FBF3E7;
+    --sand:#F1E1CB;
+    --sand-deep:#E3CBA6;
+    --ink:#3B322C;
+    --ink-soft:#6B5F55;
+    --teal:#3F6259;
+    --teal-deep:#2C463F;
+    --gold:#E3A857;
+    --gold-deep:#C98A34;
+    --danger:#B85C4C;
+    --white:#FFFDF9;
+    --heading:#2C463F;
+    --cam-aspect:4/3;
+    --radius-lg:22px;
+    --radius-md:14px;
+    --radius-sm:9px;
+    --shadow: 0 16px 34px -20px rgba(44,70,63,0.45);
+  }
+  html[data-theme="dark"]{
+    --cream:#1E2422;
+    --sand:#2A322E;
+    --sand-deep:#3C463F;
+    --ink:#F1ECE3;
+    --ink-soft:#B7B0A4;
+    --white:#242C28;
+    --heading:#9FD9C4;
+    --shadow: 0 16px 34px -20px rgba(0,0,0,0.65);
+  }
+  html[data-theme="dark"] body{background:var(--cream);}
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    min-height:100vh;
+    transition:background .2s ease, color .2s ease;
+  }
+  h1,h2,h3{font-family:'Fraunces', serif; font-weight:600; margin:0; color:var(--heading);}
+  button{font-family:inherit; cursor:pointer;}
+  input, textarea{font-family:inherit;}
+  ::selection{background:var(--gold); color:var(--white);}
+
+  /* App shell */
+  .app-header{
+    background:var(--teal-deep);
+    color:var(--cream);
+    padding:14px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    box-shadow:var(--shadow);
+    position:relative;
+    z-index:5;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:'Fraunces', serif;
+    font-size:1.15rem;
+    font-weight:600;
+  }
+  .brand-mark{
+    width:30px;height:30px;
+    border-radius:8px;
+    background:var(--gold);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .session-controls{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .session-controls input{
+    background:rgba(255,255,255,0.1);
+    border:1px solid rgba(255,255,255,0.28);
+    border-radius:999px;
+    padding:8px 16px;
+    color:var(--white);
+    font-size:0.88rem;
+    min-width:190px;
+  }
+  .session-controls input::placeholder{color:rgba(255,255,255,0.6);}
+  .session-controls input:focus{outline:2px solid var(--gold);}
+
+  .theme-toggle{
+    width:38px; height:38px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.4);
+    background:transparent;
+    color:var(--cream);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1rem;
+  }
+  .theme-toggle:hover{background:rgba(255,255,255,0.12);}
+
+  .saved-patient-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:6px 6px 6px 14px;
+    border:1px solid var(--sand-deep);
+    border-radius:var(--radius-md);
+    background:var(--cream);
+    margin-bottom:8px;
+  }
+  .saved-patient-row:hover{background:var(--sand);}
+  .saved-patient-row .switch-btn{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:2px;
+    background:none;
+    border:none;
+    text-align:left;
+    padding:6px 0;
+    cursor:pointer;
+  }
+  .saved-patient-row .name{font-weight:600; color:var(--heading);}
+  .saved-patient-row .count{font-size:0.76rem; color:var(--ink-soft);}
+  .saved-patient-row .del-patient-btn{
+    flex:none;
+    width:32px; height:32px;
+    border-radius:9px;
+    border:1px solid #E3BDB4;
+    background:transparent;
+    color:var(--danger);
+    font-size:0.85rem;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .saved-patient-row .del-patient-btn:hover{background:#FBEDE9;}
+  .patient-modal-divider{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:16px 0;
+    color:var(--ink-soft);
+    font-size:0.76rem;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+  }
+  .patient-modal-divider::before, .patient-modal-divider::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background:var(--sand-deep);
+  }
+  .new-patient-form{display:flex; flex-direction:column; gap:8px;}
+  .new-patient-form input, .new-patient-form select{
+    width:100%;
+    padding:10px 14px;
+    border-radius:999px;
+    border:1px solid var(--sand-deep);
+    background:var(--cream);
+    color:var(--ink);
+    font-size:0.9rem;
+  }
+  .new-patient-row{display:flex; gap:8px;}
+  .new-patient-row > *{flex:1; min-width:0;}
+  .new-patient-hint{font-size:0.74rem; color:var(--ink-soft); margin:-2px 2px 0;}
+
+  .toast{
+    position:fixed;
+    bottom:26px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--teal-deep);
+    color:var(--white);
+    padding:12px 22px;
+    border-radius:999px;
+    font-size:0.86rem;
+    font-weight:600;
+    box-shadow:var(--shadow);
+    z-index:200;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+    max-width:86vw;
+    text-align:center;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto;}
+
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:9px 16px;
+    border-radius:999px;
+    border:1px solid transparent;
+    font-size:0.86rem;
+    font-weight:600;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .btn:focus-visible{outline:3px solid var(--gold-deep); outline-offset:2px;}
+  .btn-gold{background:var(--gold); color:var(--teal-deep);}
+  .btn-gold:hover{background:#EEB86C; transform:translateY(-1px);}
+  .btn-outline-light{background:transparent; color:var(--cream); border-color:rgba(255,255,255,0.4);}
+  .btn-outline-light:hover{background:rgba(255,255,255,0.12);}
+  .btn-teal{background:var(--teal-deep); color:var(--white);}
+  .btn-teal:hover{background:var(--teal); transform:translateY(-1px);}
+  .btn-soft{background:var(--sand); color:var(--heading);}
+  .btn-soft:hover{background:var(--sand-deep);}
+  .btn-danger-outline{background:transparent; color:var(--danger); border-color:#E3BDB4;}
+  .btn-danger-outline:hover{background:#FBEDE9;}
+  .btn:disabled{opacity:0.45; cursor:not-allowed; transform:none !important;}
+  .btn-icon{width:38px; height:38px; padding:0; justify-content:center; border-radius:10px;}
+
+  /* Layout */
+  .app-body{
+    display:grid;
+    grid-template-columns:1fr 340px;
+    gap:0;
+    min-height:calc(100vh - 66px);
+  }
+  .stage{
+    padding:22px 24px 30px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .gallery-panel{
+    background:var(--white);
+    border-left:1px solid var(--sand-deep);
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    max-height:calc(100vh - 66px);
+    overflow-y:auto;
+  }
+
+  /* Setup / permission card */
+  .setup-card{
+    background:var(--white);
+    border:1px solid var(--sand-deep);
+    border-radius:var(--radius-lg);
+    padding:34px;
+    text-align:center;
+    max-width:560px;
+    margin:40px auto;
+    box-shadow:var(--shadow);
+  }
+  .setup-card .icon-ring{
+    width:64px;height:64px;
+    border-radius:50%;
+    background:var(--sand);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 18px;
+  }
+  .setup-card h2{font-size:1.4rem; margin-bottom:10px;}
+  .setup-card p{color:var(--ink-soft); font-size:0.95rem; margin-bottom:22px; line-height:1.6;}
+  .device-select{
+    width:100%;
+    padding:11px 14px;
+    border-radius:999px;
+    border:1px solid var(--sand-deep);
+    background:var(--cream);
+    color:var(--ink);
+    font-size:0.9rem;
+    margin-bottom:18px;
+  }
+  .status-msg{
+    font-size:0.85rem;
+    padding:10px 14px;
+    border-radius:var(--radius-sm);
+    margin-top:14px;
+    text-align:left;
+  }
+  .status-msg.error{background:#FBEDE9; color:var(--danger);}
+  .status-msg.info{background:var(--sand); color:var(--heading);}
+
+  /* Video stage */
+  .video-frame{
+    position:relative;
+    background:#111;
+    border-radius:var(--radius-lg);
+    overflow:hidden;
+    box-shadow:var(--shadow);
+    aspect-ratio:var(--cam-aspect, 4/3);
+    max-height:62vh;
+  }
+  video{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    background:#111;
+    display:block;
+  }
+  .video-badge{
+    position:absolute;
+    top:14px; left:14px;
+    background:rgba(44,70,63,0.85);
+    color:var(--white);
+    padding:6px 13px;
+    border-radius:999px;
+    font-size:0.75rem;
+    font-weight:600;
+    display:flex; align-items:center; gap:6px;
+    backdrop-filter:blur(4px);
+  }
+  .rec-dot{width:7px;height:7px;border-radius:50%;background:#EE6A55; animation:pulse 1.5s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.3;}}
+  .video-tools{
+    position:absolute;
+    top:14px; right:14px;
+    display:flex;
+    gap:8px;
+  }
+  .capture-flash{
+    position:absolute; inset:0;
+    background:#fff;
+    opacity:0;
+    pointer-events:none;
+  }
+  .capture-flash.flash{animation:flashfx .35s ease;}
+  @keyframes flashfx{0%{opacity:0.85;} 100%{opacity:0;}}
+
+  /* Controls row */
+  .controls-card{
+    background:var(--white);
+    border:1px solid var(--sand-deep);
+    border-radius:var(--radius-lg);
+    padding:18px 22px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+    align-items:center;
+  }
+  .slider-group{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:150px;
+    flex:1;
+  }
+  .slider-group label{
+    font-size:0.76rem;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--ink-soft);
+    display:flex;
+    justify-content:space-between;
+  }
+  input[type="range"]{
+    width:100%;
+    accent-color:var(--teal-deep);
+  }
+  .toggle-group{display:flex; gap:8px;}
+
+  .capture-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .tag-chips{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .chip{
+    padding:8px 14px;
+    border-radius:999px;
+    border:1px solid var(--sand-deep);
+    background:var(--cream);
+    font-size:0.82rem;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+  .chip.active{
+    background:var(--teal-deep);
+    color:var(--white);
+    border-color:var(--teal-deep);
+  }
+  .capture-btn{
+    width:66px; height:66px;
+    border-radius:50%;
+    background:var(--gold);
+    border:4px solid var(--white);
+    box-shadow:0 0 0 3px var(--teal-deep), var(--shadow);
+    flex:none;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .capture-btn:hover{background:#EEB86C;}
+  .capture-btn:active{transform:scale(0.94);}
+  .hint{font-size:0.78rem; color:var(--ink-soft);}
+
+  /* View tabs (live / 2x2 grid) */
+  .view-tabs{
+    display:flex;
+    gap:6px;
+    background:var(--sand);
+    padding:4px;
+    border-radius:999px;
+    width:fit-content;
+  }
+  .view-tab{
+    border:none;
+    background:transparent;
+    padding:8px 18px;
+    border-radius:999px;
+    font-size:0.84rem;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+  .view-tab.active{background:var(--teal-deep); color:var(--white);}
+
+  /* Freeze */
+  .freeze-overlay{
+    position:absolute; inset:0;
+    display:none;
+  }
+  .freeze-overlay img{width:100%; height:100%; object-fit:contain; background:#111;}
+  .freeze-overlay.active{display:block;}
+  .video-badge.frozen{background:rgba(227,168,87,0.92); color:var(--teal-deep);}
+
+  /* 2x2 grid view */
+  .grid-view{
+    display:none;
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:1fr 1fr;
+    gap:6px;
+    background:#111;
+    border-radius:var(--radius-lg);
+    overflow:hidden;
+    box-shadow:var(--shadow);
+    aspect-ratio:var(--cam-aspect, 4/3);
+    max-height:62vh;
+  }
+  .grid-view.active{display:grid;}
+  .grid-slot{
+    position:relative;
+    background:#1b1b1b;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+  .grid-slot.is-empty{
+    background:#20302B;
+    border:2px dashed rgba(255,255,255,0.18);
+  }
+  .grid-slot .slot-empty{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    color:rgba(255,255,255,0.55);
+    font-size:0.82rem;
+    text-align:center;
+    padding:0 16px;
+  }
+  .grid-slot .slot-empty-icon{
+    font-size:1.7rem;
+    opacity:0.55;
+    margin-bottom:2px;
+  }
+  .grid-slot .slot-empty b{
+    color:rgba(255,255,255,0.85);
+    font-size:0.86rem;
+    font-weight:700;
+  }
+  .grid-slot img{width:100%; height:100%; object-fit:contain; cursor:zoom-in; touch-action:none; user-select:none; -webkit-user-drag:none; user-drag:none; -webkit-touch-callout:none;}
+  .grid-slot img.zoomed{cursor:grab;}
+  .grid-slot img.dragging{cursor:grabbing;}
+  .slot-zoom-controls{
+    position:absolute; bottom:8px; right:8px;
+    display:flex; align-items:center; gap:2px;
+    background:rgba(0,0,0,0.55);
+    border-radius:999px;
+    padding:3px;
+  }
+  .slot-zoom-controls button{
+    width:22px; height:22px;
+    border-radius:50%;
+    border:none;
+    background:rgba(255,255,255,0.14);
+    color:#fff;
+    font-size:0.78rem;
+    display:flex; align-items:center; justify-content:center;
+    padding:0;
+  }
+  .slot-zoom-controls button:hover{background:rgba(255,255,255,0.3);}
+  .slot-zoom-level{
+    color:#fff;
+    font-size:0.66rem;
+    font-weight:600;
+    padding:0 5px;
+    min-width:32px;
+    text-align:center;
+  }
+  .grid-slot .slot-tag{
+    position:absolute; bottom:8px; left:8px;
+    background:rgba(44,70,63,0.85);
+    color:var(--white);
+    font-size:0.68rem;
+    font-weight:600;
+    padding:3px 9px;
+    border-radius:999px;
+  }
+  .grid-slot .slot-clear{
+    position:absolute; top:6px; right:6px;
+    width:22px; height:22px;
+    border-radius:50%;
+    border:none;
+    background:rgba(0,0,0,0.55);
+    color:#fff;
+    font-size:0.72rem;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* Tag mode toggle + odontogram */
+  .tag-mode-toggle{
+    display:flex;
+    gap:6px;
+    margin-bottom:10px;
+  }
+  .tag-mode-toggle button{
+    border:1px solid var(--sand-deep);
+    background:var(--cream);
+    color:var(--ink-soft);
+    padding:5px 12px;
+    border-radius:999px;
+    font-size:0.74rem;
+    font-weight:600;
+  }
+  .tag-mode-toggle button.active{background:var(--teal-deep); color:var(--white); border-color:var(--teal-deep);}
+  .odontogram{display:none; flex-direction:column; gap:10px;}
+  .odontogram.active{display:flex;}
+  .dentition-toggle{display:flex; gap:6px;}
+  .dentition-toggle button{
+    border:1px solid var(--sand-deep);
+    background:var(--cream);
+    color:var(--ink-soft);
+    padding:5px 14px;
+    border-radius:999px;
+    font-size:0.74rem;
+    font-weight:600;
+  }
+  .dentition-toggle button.active{background:var(--gold); color:var(--teal-deep); border-color:var(--gold-deep);}
+  .odontogram-chart{
+    background:var(--cream);
+    border:1px solid var(--sand-deep);
+    border-radius:var(--radius-md);
+    padding:14px 12px;
+  }
+  .odontogram-sides{
+    display:flex;
+    justify-content:space-between;
+    padding:0 4px 8px;
+    font-size:0.66rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--ink-soft);
+  }
+  .odontogram-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .odontogram-row + .odontogram-row{margin-top:12px;}
+  .odontogram-row-label{
+    flex:none;
+    width:44px;
+    font-size:0.64rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+    color:var(--ink-soft);
+  }
+  .odontogram-teeth{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+  }
+  .odontogram-side{display:flex; gap:4px;}
+  .odontogram-midline{
+    width:2px;
+    align-self:stretch;
+    background:var(--sand-deep);
+    margin:0 4px;
+    border-radius:1px;
+  }
+  .tooth-btn{
+    width:30px; height:34px;
+    border-radius:8px;
+    border:1.5px solid var(--sand-deep);
+    background:var(--white);
+    color:var(--ink);
+    font-size:0.72rem;
+    font-weight:700;
+    padding:0;
+    flex:none;
+  }
+  .tooth-btn:hover{border-color:var(--teal);}
+  .tooth-btn.active{background:var(--gold); color:var(--teal-deep); border-color:var(--gold-deep);}
+
+
+  /* Lightbox / annotation modal */
+  .lightbox-backdrop{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(44,70,63,0.72);
+    z-index:100;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .lightbox-backdrop.active{display:flex;}
+  .lightbox-card{
+    background:var(--white);
+    border-radius:var(--radius-lg);
+    padding:20px;
+    max-width:640px;
+    width:100%;
+    max-height:92vh;
+    overflow-y:auto;
+  }
+  .lightbox-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:12px;
+  }
+  .lightbox-img-wrap{
+    position:relative;
+    border-radius:var(--radius-md);
+    overflow:hidden;
+    cursor:crosshair;
+    background:#111;
+  }
+  .lightbox-img-wrap img{width:100%; display:block;}
+  .marker{
+    position:absolute;
+    width:22px; height:22px;
+    border-radius:50%;
+    background:rgba(184,92,76,0.85);
+    border:2px solid #fff;
+    color:#fff;
+    font-size:0.72rem;
+    font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    transform:translate(-50%,-50%);
+  }
+  .marker.shape-square{border-radius:4px;}
+  .marker.shape-triangle{
+    border-radius:0;
+    border:none;
+    background:transparent;
+    filter:drop-shadow(0 0 0 #fff);
+  }
+  .marker.shape-triangle::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:rgba(184,92,76,0.85);
+    clip-path:polygon(50% 4%, 4% 96%, 96% 96%);
+    border:0;
+  }
+  .marker.shape-triangle span{
+    position:relative;
+    margin-top:5px;
+  }
+  .lightbox-actions{
+    display:flex;
+    gap:8px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+  .lightbox-hint{font-size:0.78rem; color:var(--ink-soft); margin-top:8px;}
+
+  /* Printable report (hidden on screen) */
+  #reportArea{display:none;}
+  @media print{
+    body > *:not(#reportArea){display:none !important;}
+    #reportArea{display:block !important; padding:20px;}
+    .report-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+    .report-item img{width:100%; border-radius:8px;}
+    .report-item{border:1px solid #ddd; border-radius:10px; padding:10px; break-inside:avoid;}
+  }
+
+  /* Gallery */
+  .gallery-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .gallery-head h2{font-size:1.05rem;}
+  .gallery-count{
+    background:var(--sand);
+    color:var(--heading);
+    font-size:0.75rem;
+    font-weight:700;
+    padding:3px 10px;
+    border-radius:999px;
+  }
+  .gallery-actions{display:flex; gap:8px;}
+  .gallery-empty{
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:0.88rem;
+    padding:40px 10px;
+    border:1.5px dashed var(--sand-deep);
+    border-radius:var(--radius-md);
+  }
+  .gallery-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .capture-card{
+    border:1px solid var(--sand-deep);
+    border-radius:var(--radius-md);
+    overflow:hidden;
+    background:var(--cream);
+  }
+  .capture-card img{width:100%; display:block; aspect-ratio:var(--cam-aspect, 4/3); object-fit:contain; background:#111;}
+  .capture-meta{padding:10px 12px 12px;}
+  .capture-meta-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:6px;
+  }
+  .capture-tag{
+    font-size:0.72rem;
+    font-weight:700;
+    color:var(--heading);
+    background:var(--sand);
+    padding:3px 9px;
+    border-radius:999px;
+  }
+  .capture-time{font-size:0.7rem; color:var(--ink-soft);}
+  .capture-note{
+    width:100%;
+    border:1px solid var(--sand-deep);
+    border-radius:var(--radius-sm);
+    background:var(--white);
+    font-size:0.8rem;
+    padding:6px 9px;
+    margin-bottom:8px;
+    resize:none;
+  }
+  .capture-note:focus{outline:2px solid var(--teal);}
+  .capture-actions{display:flex; gap:6px; flex-wrap:wrap;}
+  .capture-actions button{
+    flex:1;
+    font-size:0.76rem;
+    padding:7px 8px;
+  }
+  .ai-btn{background:var(--sand); color:var(--heading); border:1px solid var(--sand-deep);}
+  .ai-btn:hover{background:var(--sand-deep);}
+  .ai-analysis{
+    margin-top:8px;
+    padding:9px 11px;
+    border-radius:var(--radius-sm);
+    background:var(--sand);
+    border:1px solid var(--sand-deep);
+    font-size:0.79rem;
+    color:var(--ink);
+    line-height:1.45;
+  }
+  .ai-analysis .ai-label{
+    display:block;
+    font-weight:700;
+    text-transform:uppercase;
+    font-size:0.62rem;
+    letter-spacing:0.05em;
+    color:var(--heading);
+    margin-bottom:4px;
+  }
+  .ai-analysis .ai-disclaimer{
+    display:block;
+    margin-top:6px;
+    font-size:0.68rem;
+    color:var(--ink-soft);
+    font-style:italic;
+  }
+  .apikey-hint{font-size:0.82rem; color:var(--ink-soft); line-height:1.55; text-align:left; margin-bottom:14px;}
+  .apikey-hint b{color:var(--heading);}
+
+  footer.legal{
+    text-align:center;
+    font-size:0.72rem;
+    color:var(--ink-soft);
+    padding:16px;
+  }
+
+  @media (max-width: 940px){
+    .app-body{grid-template-columns:1fr;}
+    .gallery-panel{
+      border-left:none;
+      border-top:1px solid var(--sand-deep);
+      max-height:none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3c-3 0-5 2-5 5 0 4 2 7 2 10 0 1.5 1 2 1.6 2 .9 0 1.1-1 1.4-2.6.2-1 .5-1.7 1-1.7s.8.7 1 1.7c.3 1.6.5 2.6 1.4 2.6.6 0 1.6-.5 1.6-2 0-3 2-6 2-10 0-3-2-5-5-5-.7 0-1.3.3-2 .3-.7 0-1.3-.3-2-.3z" fill="#2C463F"/></svg>
+    </span>
+    Cámara intraoral
+  </div>
+  <div class="session-controls">
+    <button class="btn btn-outline-light" id="patientBtn" title="Cambiar o crear paciente">🧑 <span id="activePatientLabel">Paciente</span></button>
+    <button class="btn btn-outline-light" id="qrBtn" title="Código QR para abrir en el celular">▦ QR</button>
+    <button class="theme-toggle" id="themeToggleBtn" title="Modo oscuro">🌙</button>
+    <button class="theme-toggle" id="apiKeyBtn" title="Configurar análisis con IA">🔑</button>
+    <button class="theme-toggle" id="castBtn" title="Ver en la TV">📺</button>
+  </div>
+</header>
+
+<div id="setupView">
+  <div class="setup-card">
+    <div class="icon-ring" aria-hidden="true">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 8a2 2 0 012-2h2l1.2-1.6A2 2 0 0110.8 3.6h2.4a2 2 0 011.6.8L16 6h2a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2V8z" stroke="#2C463F" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" stroke="#2C463F" stroke-width="1.6"/></svg>
+    </div>
+    <h2>Conecta tu cámara intraoral</h2>
+    <p>Conecta el dispositivo por USB (funciona como una cámara web). Luego activa el acceso para elegir el dispositivo correcto de la lista.</p>
+    <button class="btn btn-teal" id="enableCamBtn" style="width:100%; justify-content:center; padding:12px;">Activar acceso a la cámara</button>
+    <div id="deviceSelectWrap" style="display:none; margin-top:18px; text-align:left;">
+      <label style="font-size:0.78rem; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.05em;">Dispositivo de video</label>
+      <select class="device-select" id="deviceSelect" style="margin-top:8px;"></select>
+      <button class="btn btn-gold" id="startStreamBtn" style="width:100%; justify-content:center; padding:11px;">Iniciar cámara intraoral</button>
+    </div>
+    <div id="statusMsg"></div>
+  </div>
+</div>
+
+<div class="app-body" id="appBody" style="display:none;">
+  <div class="stage">
+    <div class="view-tabs" role="tablist" aria-label="Modo de visualización">
+      <button class="view-tab active" id="tabLive" role="tab" aria-selected="true">En vivo</button>
+      <button class="view-tab" id="tabGrid" role="tab" aria-selected="false">Cuadrícula 2x2</button>
+    </div>
+
+    <div class="video-frame" id="videoFrame">
+      <video id="video" autoplay playsinline muted></video>
+      <div class="capture-flash" id="flashEl"></div>
+      <div class="freeze-overlay" id="freezeOverlay"><img id="freezeImg" alt="Cuadro congelado"></div>
+      <div class="video-badge" id="videoBadge"><span class="rec-dot" aria-hidden="true"></span> En vivo</div>
+      <div class="video-tools">
+        <select id="deviceSelectLive" class="device-select" style="width:auto; padding:7px 12px; font-size:0.78rem; margin:0;"></select>
+        <button class="btn btn-icon btn-outline-light" id="freezeBtn" title="Congelar imagen">❄</button>
+        <button class="btn btn-icon btn-outline-light" id="mirrorBtn" title="Espejo">⇋</button>
+        <button class="btn btn-icon btn-outline-light" id="fullscreenBtn" title="Pantalla completa">⛶</button>
+      </div>
+    </div>
+
+    <div class="grid-view" id="gridView">
+      <div class="grid-slot is-empty" data-slot="0"><div class="slot-empty"><span class="slot-empty-icon">🖼️</span><b>Cuadro 1</b><span>Fija una captura desde la galería</span></div></div>
+      <div class="grid-slot is-empty" data-slot="1"><div class="slot-empty"><span class="slot-empty-icon">🖼️</span><b>Cuadro 2</b><span>Fija una captura desde la galería</span></div></div>
+      <div class="grid-slot is-empty" data-slot="2"><div class="slot-empty"><span class="slot-empty-icon">🖼️</span><b>Cuadro 3</b><span>Fija una captura desde la galería</span></div></div>
+      <div class="grid-slot is-empty" data-slot="3"><div class="slot-empty"><span class="slot-empty-icon">🖼️</span><b>Cuadro 4</b><span>Fija una captura desde la galería</span></div></div>
+    </div>
+
+    <div class="controls-card">
+      <div class="slider-group">
+        <label>Zoom <span id="zoomVal">1.0x</span></label>
+        <input type="range" id="zoomRange" min="1" max="3" step="0.1" value="1">
+      </div>
+      <div class="slider-group">
+        <label>Brillo <span id="brightVal">100%</span></label>
+        <input type="range" id="brightRange" min="60" max="160" step="5" value="100">
+      </div>
+      <div class="slider-group">
+        <label>Contraste <span id="contrastVal">100%</span></label>
+        <input type="range" id="contrastRange" min="60" max="160" step="5" value="100">
+      </div>
+      <button class="btn btn-soft" id="resetFiltersBtn">Restablecer</button>
+    </div>
+
+    <div class="controls-card capture-row">
+      <div style="flex:1;">
+        <div class="tag-mode-toggle">
+          <button class="active" id="modeZonesBtn" type="button">Por zona</button>
+          <button id="modeToothBtn" type="button">Por diente</button>
+        </div>
+        <div class="tag-chips" id="tagChips">
+          <button class="chip active" data-tag="Superior derecho">Sup. derecho</button>
+          <button class="chip" data-tag="Superior izquierdo">Sup. izquierdo</button>
+          <button class="chip" data-tag="Inferior derecho">Inf. derecho</button>
+          <button class="chip" data-tag="Inferior izquierdo">Inf. izquierdo</button>
+          <button class="chip" data-tag="Oclusal">Oclusal</button>
+          <button class="chip" data-tag="Otro">Otro</button>
+        </div>
+        <div class="odontogram" id="odontogram">
+          <div class="dentition-toggle">
+            <button id="dentitionAdultBtn" class="active" type="button">Adulto (32)</button>
+            <button id="dentitionChildBtn" type="button">Niño (20)</button>
+          </div>
+          <div class="odontogram-chart">
+            <div class="odontogram-sides"><span>Derecha</span><span>Izquierda</span></div>
+            <div id="odontogramRows"></div>
+          </div>
+        </div>
+      </div>
+      <button class="capture-btn" id="captureBtn" title="Capturar (barra espaciadora)" aria-label="Capturar imagen"></button>
+    </div>
+    <p class="hint">El zoom y los ajustes son solo para visualizar mejor en vivo — cada captura se guarda en la resolución completa de la cámara. Puedes presionar la barra espaciadora para capturar.</p>
+  </div>
+
+  <aside class="gallery-panel">
+    <div class="gallery-head">
+      <h2>Capturas <span class="gallery-count" id="galleryCount">0</span></h2>
+      <div class="gallery-actions">
+        <button class="btn btn-icon btn-soft" id="shareBtn" title="Enviar al teléfono">📱</button>
+        <button class="btn btn-icon btn-soft" id="reportBtn" title="Generar reporte">🖨</button>
+        <button class="btn btn-icon btn-soft" id="downloadAllBtn" title="Descargar todas">⬇</button>
+        <button class="btn btn-icon btn-danger-outline" id="clearGalleryBtn" title="Vaciar galería">✕</button>
+      </div>
+    </div>
+    <div class="gallery-actions" style="justify-content:space-between;">
+      <select class="device-select" id="tagFilter" style="width:auto; padding:6px 12px; font-size:0.78rem; margin:0;">
+        <option value="all">Todas las zonas</option>
+      </select>
+      <div style="display:flex; gap:6px;">
+        <button class="btn btn-icon btn-soft" id="exportPatientBtn" title="Exportar respaldo del paciente">💾</button>
+        <button class="btn btn-icon btn-soft" id="importPatientBtn" title="Restaurar respaldo de un paciente">📂</button>
+        <input type="file" id="importPatientFile" accept="application/json" style="display:none;">
+      </div>
+    </div>
+    <div id="galleryEmpty" class="gallery-empty">Aún no hay capturas en esta sesión. Usa el botón central para tomar la primera.</div>
+    <div class="gallery-list" id="galleryList"></div>
+  </aside>
+</div>
+
+<footer class="legal">Los pacientes y sus capturas se organizan por pestañas mientras esta pestaña del navegador esté abierta. Descárgalas o envíalas a tu teléfono antes de cerrarla para conservarlas.</footer>
+
+<canvas id="captureCanvas" style="display:none;"></canvas>
+
+<div class="lightbox-backdrop" id="patientModalBackdrop">
+  <div class="lightbox-card" style="max-width:400px;">
+    <div class="lightbox-head">
+      <h2 style="font-size:1.05rem;">¿Con qué paciente sigues?</h2>
+      <button class="btn btn-icon btn-soft" id="patientModalCloseBtn">✕</button>
+    </div>
+    <div id="savedPatientsList"></div>
+    <div class="patient-modal-divider">o crea uno nuevo</div>
+    <div class="new-patient-form">
+      <input type="text" id="newPatientNameInput" placeholder="Nombre del paciente">
+      <div class="new-patient-row">
+        <input type="number" id="newPatientAgeInput" placeholder="Edad" min="0" max="120">
+        <select id="newPatientGenderSelect">
+          <option value="">Género (opcional)</option>
+          <option value="Femenino">Femenino</option>
+          <option value="Masculino">Masculino</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <p class="new-patient-hint">Con la edad elegimos automáticamente el odontograma (adulto o infantil); lo puedes cambiar cuando quieras.</p>
+      <button class="btn btn-teal" id="startPatientBtn" style="justify-content:center;">Comenzar</button>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox-backdrop" id="castModalBackdrop">
+  <div class="lightbox-card" style="max-width:440px;">
+    <div class="lightbox-head">
+      <h2 style="font-size:1.05rem;">Ver esta pantalla en la TV</h2>
+      <button class="btn btn-icon btn-soft" id="castCloseBtn">✕</button>
+    </div>
+    <p class="apikey-hint">
+      Enviar la pantalla a un televisor es una función del sistema/navegador, no de esta app — pero aquí tienes las formas más confiables según lo que tengas en tu consultorio:
+    </p>
+    <p class="apikey-hint">
+      <b>📡 Chromecast o TV con Google TV</b><br>
+      En Chrome, clic en los tres puntos (⋮) arriba a la derecha → <b>"Transmitir..."</b> → elige tu TV.
+    </p>
+    <p class="apikey-hint">
+      <b>🍎 Apple TV (Mac)</b><br>
+      Centro de Control → Pantalla → AirPlay → elige tu Apple TV.
+    </p>
+    <p class="apikey-hint">
+      <b>🖥️ Windows con Miracast</b><br>
+      Tecla Windows + K → elige tu TV.
+    </p>
+    <p class="apikey-hint">
+      <b>🔌 Cable HDMI</b><br>
+      La opción más simple y sin cortes: conecta la computadora a la TV y duplica pantalla.
+    </p>
+    <div class="lightbox-actions">
+      <button class="btn btn-teal" id="castTryBtn" style="justify-content:center; flex:1;">Intentar transmitir automáticamente</button>
+    </div>
+    <p class="lightbox-hint">El botón de arriba solo funciona si tienes un Chromecast en la misma red Wi-Fi y usas Chrome o Edge; si no aparece nada, usa una de las opciones manuales.</p>
+  </div>
+</div>
+
+<div class="lightbox-backdrop" id="apiKeyModalBackdrop">
+  <div class="lightbox-card" style="max-width:420px;">
+    <div class="lightbox-head">
+      <h2 style="font-size:1.05rem;">Análisis de imágenes con IA</h2>
+      <button class="btn btn-icon btn-soft" id="apiKeyCloseBtn">✕</button>
+    </div>
+    <p class="apikey-hint">
+      El botón <b>🔬 Analizar</b> le pide a la IA de Anthropic que describa posibles hallazgos visuales (manchas, posibles caries, placa, desgaste, etc.) como <b>apoyo preliminar, nunca como diagnóstico</b>.<br><br>
+      Mientras uses esta app dentro de claude.ai, funciona automáticamente. Si la subiste a tu propio sitio (por ejemplo GitHub Pages), necesitas pegar aquí tu propia clave de API de Anthropic para activarla — el uso se cobra a tu cuenta de Anthropic.<br><br>
+      La clave solo se guarda en la memoria de esta pestaña, nunca se envía a ningún otro lugar y se pierde al cerrar o recargar la página. No la actives en computadoras compartidas o públicas.
+    </p>
+    <div class="new-patient-form">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+      <div class="new-patient-row">
+        <button class="btn btn-teal" id="apiKeySaveBtn" style="justify-content:center;">Guardar clave</button>
+        <button class="btn btn-danger-outline" id="apiKeyClearBtn" style="justify-content:center;">Quitar clave</button>
+      </div>
+    </div>
+    <p class="lightbox-hint" id="apiKeyStatus"></p>
+  </div>
+</div>
+
+<div class="lightbox-backdrop" id="qrBackdrop">
+  <div class="lightbox-card" style="max-width:340px; text-align:center;">
+    <div class="lightbox-head">
+      <h2 style="font-size:1.05rem;">Abrir esta app en el celular</h2>
+      <button class="btn btn-icon btn-soft" id="qrCloseBtn">✕</button>
+    </div>
+    <div id="qrCodeBox" style="display:flex; justify-content:center; padding:12px; background:#fff; border-radius:var(--radius-md);"></div>
+    <p class="lightbox-hint" id="qrUrlText" style="word-break:break-all;"></p>
+    <p class="lightbox-hint">Escanea con la cámara del celular para abrir esta misma app. Nota: cada dispositivo guarda sus propias capturas — las de este computador no se copian solas al teléfono, usa "Enviar al teléfono" para eso.</p>
+  </div>
+</div>
+
+<div class="lightbox-backdrop" id="lightboxBackdrop">
+  <div class="lightbox-card">
+    <div class="lightbox-head">
+      <h2 style="font-size:1.05rem;">Marcar hallazgo</h2>
+      <button class="btn btn-icon btn-soft" id="lightboxCloseBtn">✕</button>
+    </div>
+    <div class="tag-mode-toggle" id="shapeToggle">
+      <button class="active" data-shape="circle" type="button">⚪ Círculo</button>
+      <button data-shape="square" type="button">⬜ Cuadrado</button>
+      <button data-shape="triangle" type="button">🔺 Triángulo</button>
+    </div>
+    <div class="lightbox-img-wrap" id="lightboxImgWrap">
+      <img id="lightboxImg" alt="Captura ampliada">
+    </div>
+    <p class="lightbox-hint">Elige una forma y haz clic sobre la imagen para marcar un punto de interés (por ejemplo, una caries o grieta). Puedes marcar varios puntos, incluso con formas distintas.</p>
+    <div class="lightbox-actions">
+      <button class="btn btn-soft" id="lightboxUndoBtn">Quitar última marca</button>
+      <button class="btn btn-teal" id="lightboxSaveBtn">Guardar con marcas</button>
+    </div>
+  </div>
+</div>
+
+<div id="reportArea">
+  <h1 style="font-family:'Fraunces',serif;">Reporte de examen intraoral</h1>
+  <p id="reportMeta"></p>
+  <div class="report-grid" id="reportGrid"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const setupView = document.getElementById('setupView');
+  const appBody = document.getElementById('appBody');
+  const enableCamBtn = document.getElementById('enableCamBtn');
+  const deviceSelectWrap = document.getElementById('deviceSelectWrap');
+  const deviceSelect = document.getElementById('deviceSelect');
+  const deviceSelectLive = document.getElementById('deviceSelectLive');
+  const startStreamBtn = document.getElementById('startStreamBtn');
+  const statusMsg = document.getElementById('statusMsg');
+  const video = document.getElementById('video');
+  const flashEl = document.getElementById('flashEl');
+  const captureCanvas = document.getElementById('captureCanvas');
+  const captureBtn = document.getElementById('captureBtn');
+  const mirrorBtn = document.getElementById('mirrorBtn');
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  const videoFrame = document.getElementById('videoFrame');
+  const zoomRange = document.getElementById('zoomRange');
+  const brightRange = document.getElementById('brightRange');
+  const contrastRange = document.getElementById('contrastRange');
+  const zoomVal = document.getElementById('zoomVal');
+  const brightVal = document.getElementById('brightVal');
+  const contrastVal = document.getElementById('contrastVal');
+  const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+  const tagChips = document.getElementById('tagChips');
+  const galleryList = document.getElementById('galleryList');
+  const galleryEmpty = document.getElementById('galleryEmpty');
+  const galleryCount = document.getElementById('galleryCount');
+  const downloadAllBtn = document.getElementById('downloadAllBtn');
+  const clearGalleryBtn = document.getElementById('clearGalleryBtn');
+  const tabLive = document.getElementById('tabLive');
+  const tabGrid = document.getElementById('tabGrid');
+  const gridView = document.getElementById('gridView');
+  const freezeBtn = document.getElementById('freezeBtn');
+  const freezeOverlay = document.getElementById('freezeOverlay');
+  const freezeImg = document.getElementById('freezeImg');
+  const videoBadge = document.getElementById('videoBadge');
+  const modeZonesBtn = document.getElementById('modeZonesBtn');
+  const modeToothBtn = document.getElementById('modeToothBtn');
+  const odontogram = document.getElementById('odontogram');
+  const reportBtn = document.getElementById('reportBtn');
+  const reportArea = document.getElementById('reportArea');
+  const reportMeta = document.getElementById('reportMeta');
+  const reportGrid = document.getElementById('reportGrid');
+  const lightboxBackdrop = document.getElementById('lightboxBackdrop');
+  const lightboxImg = document.getElementById('lightboxImg');
+  const lightboxImgWrap = document.getElementById('lightboxImgWrap');
+  const lightboxCloseBtn = document.getElementById('lightboxCloseBtn');
+  const lightboxUndoBtn = document.getElementById('lightboxUndoBtn');
+  const shapeToggle = document.getElementById('shapeToggle');
+  const lightboxSaveBtn = document.getElementById('lightboxSaveBtn');
+  const shareBtn = document.getElementById('shareBtn');
+  const toast = document.getElementById('toast');
+  const qrBtn = document.getElementById('qrBtn');
+  const qrBackdrop = document.getElementById('qrBackdrop');
+  const qrCloseBtn = document.getElementById('qrCloseBtn');
+  const qrCodeBox = document.getElementById('qrCodeBox');
+  const qrUrlText = document.getElementById('qrUrlText');
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  const apiKeyBtn = document.getElementById('apiKeyBtn');
+  const castBtn = document.getElementById('castBtn');
+  const castModalBackdrop = document.getElementById('castModalBackdrop');
+  const castCloseBtn = document.getElementById('castCloseBtn');
+  const castTryBtn = document.getElementById('castTryBtn');
+  const apiKeyModalBackdrop = document.getElementById('apiKeyModalBackdrop');
+  const apiKeyCloseBtn = document.getElementById('apiKeyCloseBtn');
+  const apiKeyInput = document.getElementById('apiKeyInput');
+  const apiKeySaveBtn = document.getElementById('apiKeySaveBtn');
+  const apiKeyClearBtn = document.getElementById('apiKeyClearBtn');
+  const apiKeyStatus = document.getElementById('apiKeyStatus');
+  const patientBtn = document.getElementById('patientBtn');
+  const activePatientLabel = document.getElementById('activePatientLabel');
+  const patientModalBackdrop = document.getElementById('patientModalBackdrop');
+  const patientModalCloseBtn = document.getElementById('patientModalCloseBtn');
+  const savedPatientsList = document.getElementById('savedPatientsList');
+  const newPatientNameInput = document.getElementById('newPatientNameInput');
+  const newPatientAgeInput = document.getElementById('newPatientAgeInput');
+  const newPatientGenderSelect = document.getElementById('newPatientGenderSelect');
+  const startPatientBtn = document.getElementById('startPatientBtn');
+  const exportPatientBtn = document.getElementById('exportPatientBtn');
+  const importPatientBtn = document.getElementById('importPatientBtn');
+  const importPatientFile = document.getElementById('importPatientFile');
+  const tagFilter = document.getElementById('tagFilter');
+  const dentitionAdultBtn = document.getElementById('dentitionAdultBtn');
+  const dentitionChildBtn = document.getElementById('dentitionChildBtn');
+  const odontogramRows = document.getElementById('odontogramRows');
+
+  let currentStream = null;
+  let mirrored = false;
+  let frozen = false;
+  let activeTag = 'Superior derecho';
+  let captures = []; // reference to the active patient's captures array
+  let captureIdSeq = 1;
+  let patients = []; // [{id, name, captures: []}], organizes captures by patient within this session
+  let activePatientIndex = -1;
+  let gridSlots = [null, null, null, null]; // capture ids pinned to the 2x2 grid
+  let gridZoom = [
+    { scale: 1, x: 0, y: 0 },
+    { scale: 1, x: 0, y: 0 },
+    { scale: 1, x: 0, y: 0 },
+    { scale: 1, x: 0, y: 0 }
+  ];
+  let lightboxCapId = null;
+  let lightboxMarkers = []; // {x%, y%}
+  let filterTag = 'all';
+  let userApiKey = null; // session-only, never persisted to disk
+  let hasEnteredApp = false;
+
+  function showStatus(text, type){
+    statusMsg.className = 'status-msg ' + (type || 'info');
+    statusMsg.textContent = text;
+    statusMsg.style.display = 'block';
+  }
+
+  let toastTimer = null;
+  function showToast(text){
+    toast.textContent = text;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3800);
+  }
+
+  // --- Cast to TV: this is really an OS/browser feature, so we show reliable instructions
+  // plus a best-effort attempt via the Presentation API (works for Chromecast on Chrome/Edge). ---
+  castBtn.addEventListener('click', () => castModalBackdrop.classList.add('active'));
+  castCloseBtn.addEventListener('click', () => castModalBackdrop.classList.remove('active'));
+  castModalBackdrop.addEventListener('click', (e) => { if (e.target === castModalBackdrop) castModalBackdrop.classList.remove('active'); });
+  castTryBtn.addEventListener('click', async () => {
+    if (!('PresentationRequest' in window)){
+      showToast('Tu navegador no soporta transmisión automática. Usa una de las opciones manuales de arriba.');
+      return;
+    }
+    try {
+      const request = new PresentationRequest([window.location.href]);
+      await request.start();
+      showToast('Transmitiendo a la pantalla seleccionada.');
+      castModalBackdrop.classList.remove('active');
+    } catch (err){
+      showToast('No se encontró ningún Chromecast disponible, o se canceló. Usa una de las opciones manuales de arriba.');
+    }
+  });
+
+  // --- Dark mode toggle (session only, no browser storage used) ---
+  themeToggleBtn.addEventListener('click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    themeToggleBtn.textContent = isDark ? '🌙' : '☀️';
+  });
+
+  // --- AI visual analysis: asks Claude to describe possible findings in a capture (assistive, not a diagnosis) ---
+  const AI_ANALYSIS_PROMPT = 'Eres un asistente de apoyo visual para un consultorio dental. Observa esta imagen tomada con una cámara intraoral y describe en español, en máximo 3-4 líneas, cualquier hallazgo visualmente relevante (por ejemplo manchas, posibles lesiones cariosas, placa, cambios de color en el esmalte, desgaste, inflamación gingival, cálculo dental). Usa lenguaje de sugerencia, no de certeza ("podría", "se observa", "sugiere revisar"). Si no hay hallazgos claros, dilo explícitamente. No propongas tratamientos ni diagnósticos definitivos: esto es apoyo visual preliminar para que el profesional lo confirme.';
+
+  apiKeyBtn.addEventListener('click', () => {
+    apiKeyInput.value = userApiKey || '';
+    apiKeyStatus.textContent = userApiKey ? 'Ya hay una clave activa en esta sesión.' : '';
+    apiKeyModalBackdrop.classList.add('active');
+  });
+  apiKeyCloseBtn.addEventListener('click', () => apiKeyModalBackdrop.classList.remove('active'));
+  apiKeyModalBackdrop.addEventListener('click', (e) => { if (e.target === apiKeyModalBackdrop) apiKeyModalBackdrop.classList.remove('active'); });
+  apiKeySaveBtn.addEventListener('click', () => {
+    const val = apiKeyInput.value.trim();
+    if (!val){ apiKeyStatus.textContent = 'Pega una clave válida antes de guardar.'; return; }
+    userApiKey = val;
+    apiKeyStatus.textContent = 'Clave guardada para esta sesión.';
+    showToast('Clave de IA activada para esta sesión.');
+  });
+  apiKeyClearBtn.addEventListener('click', () => {
+    userApiKey = null;
+    apiKeyInput.value = '';
+    apiKeyStatus.textContent = 'Clave eliminada.';
+  });
+
+  async function callClaudeVision(base64, promptText){
+    const headers = { 'Content-Type': 'application/json' };
+    if (userApiKey){
+      headers['x-api-key'] = userApiKey;
+      headers['anthropic-version'] = '2023-06-01';
+      headers['anthropic-dangerous-direct-browser-access'] = 'true';
+    }
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 350,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+            { type: 'text', text: promptText }
+          ]
+        }]
+      })
+    });
+    if (!res.ok){
+      const errText = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status} ${errText.slice(0, 160)}`);
+    }
+    const data = await res.json();
+    const block = (data.content || []).find(b => b.type === 'text');
+    return block ? block.text.trim() : null;
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+  }
+
+  async function analyzeCapture(cap, btnEl){
+    const original = btnEl.textContent;
+    btnEl.disabled = true;
+    btnEl.textContent = 'Analizando…';
+    try {
+      const base64 = cap.dataURL.split(',')[1];
+      const result = await callClaudeVision(base64, AI_ANALYSIS_PROMPT);
+      cap.aiAnalysis = result || 'La IA no devolvió una respuesta interpretable. Intenta de nuevo.';
+    } catch (err){
+      if (!userApiKey){
+        showToast('No se pudo conectar con la IA. Si usas la app fuera de claude.ai, agrega tu clave (🔑) para activar esta función.');
+      } else {
+        showToast('No se pudo analizar la imagen: revisa tu clave o tu conexión.');
+      }
+    } finally {
+      btnEl.disabled = false;
+      btnEl.textContent = original;
+      renderGallery();
+    }
+  }
+
+  // --- QR code: lets a phone scan and open this same app (once hosted at a real URL, e.g. GitHub Pages) ---
+  let qrGenerated = false;
+  qrBtn.addEventListener('click', () => {
+    const url = window.location.href;
+    qrUrlText.textContent = url;
+    if (!qrGenerated){
+      if (typeof QRCode === 'undefined'){
+        qrCodeBox.textContent = 'No se pudo cargar el generador de QR (sin conexión a internet).';
+      } else {
+        new QRCode(qrCodeBox, { text: url, width: 200, height: 200, colorDark: '#2C463F', colorLight: '#ffffff' });
+      }
+      qrGenerated = true;
+    }
+    if (url.startsWith('file://')){
+      showToast('Este QR solo funcionará entre dispositivos cuando subas la app a una URL real (por ejemplo, GitHub Pages).');
+    }
+    qrBackdrop.classList.add('active');
+  });
+  qrCloseBtn.addEventListener('click', () => qrBackdrop.classList.remove('active'));
+  qrBackdrop.addEventListener('click', (e) => { if (e.target === qrBackdrop) qrBackdrop.classList.remove('active'); });
+
+  // --- Patients: organize captures into per-patient folders for this session ---
+  function createPatient(name, age, gender){
+    const ageNum = age !== undefined && age !== '' && !isNaN(age) ? Number(age) : null;
+    const dentition = ageNum !== null && ageNum < 12 ? 'child' : 'adult';
+    const p = {
+      id: 'p' + Date.now() + Math.floor(Math.random() * 1000),
+      name: name || `Paciente ${patients.length + 1}`,
+      age: ageNum,
+      gender: gender || '',
+      dentition,
+      captures: []
+    };
+    patients.push(p);
+    activePatientIndex = patients.length - 1;
+    captures = p.captures;
+    gridSlots = [null, null, null, null];
+    gridZoom = [{ scale: 1, x: 0, y: 0 }, { scale: 1, x: 0, y: 0 }, { scale: 1, x: 0, y: 0 }, { scale: 1, x: 0, y: 0 }];
+    activePatientLabel.textContent = p.name;
+    setDentition(p.dentition);
+    return p;
+  }
+
+  function ensureActivePatient(){
+    if (activePatientIndex === -1){
+      createPatient('Paciente 1');
+    }
+  }
+
+  function switchPatient(index){
+    activePatientIndex = index;
+    captures = patients[index].captures;
+    activePatientLabel.textContent = patients[index].name;
+    gridSlots = [null, null, null, null];
+    gridZoom = [{ scale: 1, x: 0, y: 0 }, { scale: 1, x: 0, y: 0 }, { scale: 1, x: 0, y: 0 }, { scale: 1, x: 0, y: 0 }];
+    filterTag = 'all';
+    setDentition(patients[index].dentition || 'adult');
+    renderGallery();
+    renderGrid();
+  }
+
+  function deletePatient(index){
+    const p = patients[index];
+    if (!confirm(`¿Eliminar a "${p.name}" y sus ${p.captures.length} captura(s)? Esta acción no se puede deshacer.`)) return;
+    patients.splice(index, 1);
+    if (activePatientIndex === index){
+      activePatientIndex = -1;
+      captures = [];
+      gridSlots = [null, null, null, null];
+      gridZoom = [{ scale: 1, x: 0, y: 0 }, { scale: 1, x: 0, y: 0 }, { scale: 1, x: 0, y: 0 }, { scale: 1, x: 0, y: 0 }];
+      activePatientLabel.textContent = 'Paciente';
+      renderGallery();
+      renderGrid();
+    } else if (activePatientIndex > index){
+      activePatientIndex -= 1;
+    }
+    openPatientModal();
+  }
+
+  function openPatientModal(){
+    savedPatientsList.innerHTML = '';
+    if (patients.length === 0){
+      savedPatientsList.innerHTML = '<p class="lightbox-hint" style="text-align:left;">Aún no hay pacientes en esta sesión. Crea el primero abajo.</p>';
+    } else {
+      patients.forEach((p, i) => {
+        const row = document.createElement('div');
+        row.className = 'saved-patient-row';
+        row.innerHTML = `
+          <button class="switch-btn">
+            <span class="name">${p.name}${i === activePatientIndex ? ' · activo' : ''}</span>
+            <span class="count">${p.captures.length} captura(s)</span>
+          </button>
+          <button class="del-patient-btn" title="Eliminar paciente">🗑</button>`;
+        row.querySelector('.switch-btn').addEventListener('click', () => {
+          switchPatient(i);
+          closePatientModal();
+        });
+        row.querySelector('.del-patient-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          deletePatient(i);
+        });
+        savedPatientsList.appendChild(row);
+      });
+    }
+    newPatientNameInput.value = '';
+    newPatientAgeInput.value = '';
+    newPatientGenderSelect.value = '';
+    patientModalBackdrop.classList.add('active');
+  }
+  function closePatientModal(){
+    patientModalBackdrop.classList.remove('active');
+  }
+  patientBtn.addEventListener('click', openPatientModal);
+  patientModalCloseBtn.addEventListener('click', () => {
+    ensureActivePatient();
+    closePatientModal();
+  });
+  patientModalBackdrop.addEventListener('click', (e) => {
+    if (e.target === patientModalBackdrop){ ensureActivePatient(); closePatientModal(); }
+  });
+  startPatientBtn.addEventListener('click', () => {
+    createPatient(newPatientNameInput.value.trim(), newPatientAgeInput.value, newPatientGenderSelect.value);
+    renderGallery();
+    renderGrid();
+    closePatientModal();
+  });
+  newPatientNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') startPatientBtn.click();
+  });
+
+  // --- Backup: export the active patient (all captures, tags, notes) as a JSON file, and re-import it later ---
+  exportPatientBtn.addEventListener('click', () => {
+    if (activePatientIndex === -1 || !captures.length){
+      showToast('No hay capturas del paciente activo para exportar.');
+      return;
+    }
+    const patient = patients[activePatientIndex];
+    const payload = { name: patient.name, exportedAt: new Date().toISOString(), captures };
+    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${patient.name.replace(/\s+/g, '-').toLowerCase()}_backup.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+  importPatientBtn.addEventListener('click', () => importPatientFile.click());
+  importPatientFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!data.captures || !Array.isArray(data.captures)) throw new Error('formato inválido');
+        const p = createPatient(data.name ? data.name + ' (importado)' : 'Paciente importado');
+        data.captures.forEach(c => { c.id = captureIdSeq++; });
+        p.captures.push(...data.captures);
+        captures = p.captures;
+        renderGallery();
+        renderGrid();
+        showToast(`Se restauraron ${data.captures.length} captura(s) de ${p.name}.`);
+      } catch (err){
+        showToast('El archivo no es un respaldo válido de esta app.');
+      }
+      importPatientFile.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  function applyFilters(){
+    const b = brightRange.value, c = contrastRange.value, z = zoomRange.value;
+    video.style.filter = `brightness(${b}%) contrast(${c}%)`;
+    video.style.transform = `scale(${z}) ${mirrored ? 'scaleX(-1)' : ''}`;
+    zoomVal.textContent = parseFloat(z).toFixed(1) + 'x';
+    brightVal.textContent = b + '%';
+    contrastVal.textContent = c + '%';
+  }
+  [zoomRange, brightRange, contrastRange].forEach(r => r.addEventListener('input', applyFilters));
+  resetFiltersBtn.addEventListener('click', () => {
+    zoomRange.value = 1; brightRange.value = 100; contrastRange.value = 100;
+    applyFilters();
+  });
+  mirrorBtn.addEventListener('click', () => {
+    mirrored = !mirrored;
+    mirrorBtn.style.background = mirrored ? 'var(--gold)' : 'transparent';
+    mirrorBtn.style.color = mirrored ? 'var(--teal-deep)' : 'var(--cream)';
+    applyFilters();
+  });
+  fullscreenBtn.addEventListener('click', () => {
+    if (videoFrame.requestFullscreen) videoFrame.requestFullscreen();
+  });
+
+  // --- View tabs: live vs 2x2 grid ---
+  function setView(view){
+    const isGrid = view === 'grid';
+    tabGrid.classList.toggle('active', isGrid);
+    tabGrid.setAttribute('aria-selected', isGrid);
+    tabLive.classList.toggle('active', !isGrid);
+    tabLive.setAttribute('aria-selected', !isGrid);
+    videoFrame.style.display = isGrid ? 'none' : 'block';
+    gridView.classList.toggle('active', isGrid);
+  }
+  tabLive.addEventListener('click', () => setView('live'));
+  tabGrid.addEventListener('click', () => setView('grid'));
+
+  // --- Freeze frame (pause the live view to inspect closely) ---
+  freezeBtn.addEventListener('click', () => {
+    frozen = !frozen;
+    if (frozen){
+      if (!video.videoWidth) { frozen = false; return; }
+      const w = video.videoWidth, h = video.videoHeight;
+      captureCanvas.width = w; captureCanvas.height = h;
+      const ctx = captureCanvas.getContext('2d');
+      if (mirrored){ ctx.translate(w, 0); ctx.scale(-1, 1); }
+      ctx.drawImage(video, 0, 0, w, h);
+      freezeImg.src = captureCanvas.toDataURL('image/jpeg', 0.9);
+      freezeOverlay.classList.add('active');
+      videoBadge.classList.add('frozen');
+      videoBadge.innerHTML = '❄ Congelado';
+      freezeBtn.style.background = 'var(--gold)';
+      freezeBtn.style.color = 'var(--teal-deep)';
+    } else {
+      freezeOverlay.classList.remove('active');
+      videoBadge.classList.remove('frozen');
+      videoBadge.innerHTML = '<span class="rec-dot" aria-hidden="true"></span> En vivo';
+      freezeBtn.style.background = 'transparent';
+      freezeBtn.style.color = 'var(--cream)';
+    }
+  });
+
+  // --- Tag mode: quick zones vs odontogram (tooth numbers), drawn as a real two-arch dental chart ---
+  // Adult (permanent, FDI/ISO notation): quadrants 1-2 (upper) and 4-3 (lower).
+  const ADULT_ARCHES = [
+    { label: 'Superior', right: [18, 17, 16, 15, 14, 13, 12, 11], left: [21, 22, 23, 24, 25, 26, 27, 28] },
+    { label: 'Inferior', right: [48, 47, 46, 45, 44, 43, 42, 41], left: [31, 32, 33, 34, 35, 36, 37, 38] }
+  ];
+  // Child (primary teeth, FDI/ISO notation): quadrants 5-6 (upper) and 8-7 (lower).
+  const CHILD_ARCHES = [
+    { label: 'Superior', right: [55, 54, 53, 52, 51], left: [61, 62, 63, 64, 65] },
+    { label: 'Inferior', right: [85, 84, 83, 82, 81], left: [71, 72, 73, 74, 75] }
+  ];
+  let currentDentition = 'adult';
+
+  function renderOdontogram(){
+    const arches = currentDentition === 'adult' ? ADULT_ARCHES : CHILD_ARCHES;
+    const toothBtn = t => `<button class="tooth-btn" type="button" data-tooth="${t}">${t}</button>`;
+    odontogramRows.innerHTML = arches.map(arch => `
+      <div class="odontogram-row">
+        <span class="odontogram-row-label">${arch.label}</span>
+        <div class="odontogram-teeth">
+          <div class="odontogram-side">${arch.right.map(toothBtn).join('')}</div>
+          <div class="odontogram-midline"></div>
+          <div class="odontogram-side">${arch.left.map(toothBtn).join('')}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  function setDentition(type){
+    currentDentition = type === 'child' ? 'child' : 'adult';
+    dentitionAdultBtn.classList.toggle('active', currentDentition === 'adult');
+    dentitionChildBtn.classList.toggle('active', currentDentition === 'child');
+    renderOdontogram();
+  }
+  dentitionAdultBtn.addEventListener('click', () => {
+    setDentition('adult');
+    if (activePatientIndex !== -1) patients[activePatientIndex].dentition = 'adult';
+  });
+  dentitionChildBtn.addEventListener('click', () => {
+    setDentition('child');
+    if (activePatientIndex !== -1) patients[activePatientIndex].dentition = 'child';
+  });
+  renderOdontogram();
+
+  modeZonesBtn.addEventListener('click', () => {
+    modeZonesBtn.classList.add('active'); modeToothBtn.classList.remove('active');
+    tagChips.style.display = 'flex'; odontogram.classList.remove('active');
+  });
+  modeToothBtn.addEventListener('click', () => {
+    modeToothBtn.classList.add('active'); modeZonesBtn.classList.remove('active');
+    tagChips.style.display = 'none'; odontogram.classList.add('active');
+  });
+  odontogram.addEventListener('click', (e) => {
+    const t = e.target.closest('.tooth-btn');
+    if (!t) return;
+    odontogram.querySelectorAll('.tooth-btn').forEach(b => b.classList.remove('active'));
+    t.classList.add('active');
+    activeTag = 'Diente ' + t.dataset.tooth;
+  });
+
+
+  async function listDevices(){
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cams = devices.filter(d => d.kind === 'videoinput');
+    [deviceSelect, deviceSelectLive].forEach(sel => {
+      sel.innerHTML = '';
+      cams.forEach((d, i) => {
+        const opt = document.createElement('option');
+        opt.value = d.deviceId;
+        opt.textContent = d.label || `Cámara ${i + 1}`;
+        sel.appendChild(opt);
+      });
+    });
+    return cams;
+  }
+
+  function updateCamAspect(){
+    if (video.videoWidth && video.videoHeight){
+      document.documentElement.style.setProperty('--cam-aspect', `${video.videoWidth} / ${video.videoHeight}`);
+      return true;
+    }
+    return false;
+  }
+  video.addEventListener('loadedmetadata', updateCamAspect);
+  video.addEventListener('loadeddata', updateCamAspect);
+  video.addEventListener('canplay', updateCamAspect);
+
+  async function startStream(deviceId){
+    if (currentStream){
+      currentStream.getTracks().forEach(t => t.stop());
+    }
+    try {
+      const constraints = {
+        video: deviceId ? { deviceId: { exact: deviceId } } : true,
+        audio: false
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      currentStream = stream;
+      video.srcObject = stream;
+      setupView.style.display = 'none';
+      appBody.style.display = 'grid';
+      applyFilters();
+      // Try right away in case metadata is already available, then retry shortly after
+      // as a safety net for browsers that fire the events before listeners settle.
+      if (!updateCamAspect()){
+        setTimeout(updateCamAspect, 300);
+        setTimeout(updateCamAspect, 1000);
+      }
+      if (!hasEnteredApp){
+        hasEnteredApp = true;
+        openPatientModal();
+      }
+    } catch(err){
+      showStatus('No se pudo iniciar esa cámara: ' + err.message, 'error');
+    }
+  }
+
+  enableCamBtn.addEventListener('click', async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      showStatus('Este navegador no permite acceso a la cámara. Prueba con Chrome, Edge o Firefox.', 'error');
+      return;
+    }
+    try {
+      const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      tempStream.getTracks().forEach(t => t.stop());
+      const cams = await listDevices();
+      if (cams.length === 0){
+        showStatus('No se detectó ninguna cámara conectada.', 'error');
+        return;
+      }
+      deviceSelectWrap.style.display = 'block';
+      enableCamBtn.style.display = 'none';
+      showStatus(`${cams.length} dispositivo(s) de video encontrados. Elige el que corresponde a tu cámara intraoral.`, 'info');
+    } catch(err){
+      showStatus('Se necesita permiso de cámara para continuar: ' + err.message, 'error');
+    }
+  });
+
+  startStreamBtn.addEventListener('click', () => startStream(deviceSelect.value));
+  deviceSelectLive.addEventListener('change', () => startStream(deviceSelectLive.value));
+
+  function flash(){
+    flashEl.classList.remove('flash');
+    void flashEl.offsetWidth;
+    flashEl.classList.add('flash');
+  }
+
+  function captureFrame(){
+    if (!video.videoWidth){
+      showStatus('La cámara aún no está lista.', 'error');
+      return;
+    }
+    const w = video.videoWidth, h = video.videoHeight;
+    captureCanvas.width = w;
+    captureCanvas.height = h;
+    const ctx = captureCanvas.getContext('2d');
+    ctx.filter = `brightness(${brightRange.value}%) contrast(${contrastRange.value}%)`;
+    if (mirrored){
+      ctx.translate(w, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(video, 0, 0, w, h);
+    const dataURL = captureCanvas.toDataURL('image/jpeg', 0.92);
+    flash();
+    addCapture(dataURL);
+  }
+
+  function addCapture(dataURL){
+    ensureActivePatient();
+    const cap = {
+      id: captureIdSeq++,
+      dataURL,
+      tag: activeTag,
+      note: '',
+      time: new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })
+    };
+    captures.unshift(cap);
+    renderGallery();
+  }
+
+  function renderGallery(){
+    galleryCount.textContent = captures.length;
+    galleryEmpty.style.display = captures.length ? 'none' : 'block';
+
+    // keep the filter dropdown in sync with the tags actually used by this patient
+    const uniqueTags = [...new Set(captures.map(c => c.tag))];
+    const prevFilter = tagFilter.value;
+    tagFilter.innerHTML = '<option value="all">Todas las zonas</option>' +
+      uniqueTags.map(t => `<option value="${t}">${t}</option>`).join('');
+    tagFilter.value = uniqueTags.includes(prevFilter) ? prevFilter : 'all';
+    filterTag = tagFilter.value;
+
+    const visible = filterTag === 'all' ? captures : captures.filter(c => c.tag === filterTag);
+    galleryList.innerHTML = '';
+    if (captures.length && !visible.length){
+      galleryEmpty.style.display = 'block';
+      galleryEmpty.textContent = 'Ninguna captura coincide con este filtro.';
+    } else if (!captures.length){
+      galleryEmpty.textContent = 'Aún no hay capturas en esta sesión. Usa el botón central para tomar la primera.';
+    }
+    visible.forEach(cap => {
+      const card = document.createElement('div');
+      card.className = 'capture-card';
+      const pinned = gridSlots.includes(cap.id);
+      card.innerHTML = `
+        <img src="${cap.dataURL}" alt="Captura intraoral, zona ${cap.tag}" class="thumb-img" style="cursor:zoom-in;">
+        <div class="capture-meta">
+          <div class="capture-meta-top">
+            <span class="capture-tag">${cap.tag}</span>
+            <span class="capture-time">${cap.time}</span>
+          </div>
+          <textarea class="capture-note" rows="1" placeholder="Nota (opcional)">${cap.note}</textarea>
+          <div class="capture-actions">
+            <button class="btn ${pinned ? 'btn-gold' : 'btn-soft'} pin-btn">${pinned ? 'Fijada ✓' : 'Fijar 2x2'}</button>
+            <button class="btn btn-soft dl-btn">Descargar</button>
+            <button class="btn btn-danger-outline del-btn">Eliminar</button>
+          </div>
+          <div class="capture-actions" style="margin-top:6px;">
+            <button class="btn ai-btn">🔬 Analizar con IA</button>
+          </div>
+          ${cap.aiAnalysis ? `<div class="ai-analysis"><span class="ai-label">Sugerencia de IA</span>${escapeHtml(cap.aiAnalysis)}<span class="ai-disclaimer">No es un diagnóstico — confírmalo con criterio profesional.</span></div>` : ''}
+        </div>`;
+      card.querySelector('.capture-note').addEventListener('input', (e) => {
+        cap.note = e.target.value;
+      });
+      card.querySelector('.thumb-img').addEventListener('click', () => openLightbox(cap.id));
+      card.querySelector('.pin-btn').addEventListener('click', () => togglePin(cap.id));
+      card.querySelector('.dl-btn').addEventListener('click', () => downloadCapture(cap));
+      card.querySelector('.ai-btn').addEventListener('click', (e) => analyzeCapture(cap, e.currentTarget));
+      card.querySelector('.del-btn').addEventListener('click', () => {
+        captures = captures.filter(c => c.id !== cap.id);
+        if (activePatientIndex !== -1) patients[activePatientIndex].captures = captures;
+        gridSlots = gridSlots.map(id => id === cap.id ? null : id);
+        renderGallery();
+        renderGrid();
+      });
+      galleryList.appendChild(card);
+    });
+  }
+
+  tagFilter.addEventListener('change', () => {
+    filterTag = tagFilter.value;
+    renderGallery();
+  });
+
+  // --- 2x2 grid pinning ---
+  function togglePin(capId){
+    const existingIndex = gridSlots.indexOf(capId);
+    if (existingIndex !== -1){
+      gridSlots[existingIndex] = null;
+      gridZoom[existingIndex] = { scale: 1, x: 0, y: 0 };
+    } else {
+      const emptyIndex = gridSlots.indexOf(null);
+      const targetIndex = emptyIndex === -1 ? 0 : emptyIndex;
+      gridSlots[targetIndex] = capId;
+      gridZoom[targetIndex] = { scale: 1, x: 0, y: 0 };
+    }
+    renderGallery();
+    renderGrid();
+    setView('grid');
+  }
+
+  function renderGrid(){
+    gridView.querySelectorAll('.grid-slot').forEach((slotEl, i) => {
+      const capId = gridSlots[i];
+      const cap = captures.find(c => c.id === capId);
+      if (!cap){
+        slotEl.classList.add('is-empty');
+        slotEl.innerHTML = `<div class="slot-empty"><span class="slot-empty-icon">🖼️</span><b>Cuadro ${i + 1}</b><span>Fija una captura desde la galería</span></div>`;
+        return;
+      }
+      slotEl.classList.remove('is-empty');
+      const z = gridZoom[i];
+      slotEl.innerHTML = `
+        <img src="${cap.dataURL}" alt="Captura fijada, ${cap.tag}" class="${z.scale > 1 ? 'zoomed' : ''}" draggable="false">
+        <span class="slot-tag">${cap.tag}</span>
+        <button class="slot-clear" title="Quitar de la cuadrícula">✕</button>
+        <div class="slot-zoom-controls">
+          <button class="slot-zoom-out" title="Alejar">−</button>
+          <span class="slot-zoom-level">${Math.round(z.scale * 100)}%</span>
+          <button class="slot-zoom-in" title="Acercar">+</button>
+          <button class="slot-expand" title="Ver en grande">⤢</button>
+        </div>`;
+      const imgEl = slotEl.querySelector('img');
+      applySlotTransform(i, imgEl);
+      imgEl.addEventListener('dragstart', (e) => e.preventDefault());
+
+      slotEl.querySelector('.slot-clear').addEventListener('click', () => {
+        gridSlots[i] = null;
+        gridZoom[i] = { scale: 1, x: 0, y: 0 };
+        renderGallery();
+        renderGrid();
+      });
+      slotEl.querySelector('.slot-zoom-in').addEventListener('click', () => setSlotZoom(i, z.scale + 0.5));
+      slotEl.querySelector('.slot-zoom-out').addEventListener('click', () => setSlotZoom(i, z.scale - 0.5));
+      slotEl.querySelector('.slot-expand').addEventListener('click', () => openLightbox(cap.id));
+
+      // drag to pan when zoomed in
+      let dragging = false, startX = 0, startY = 0, startPanX = 0, startPanY = 0;
+      imgEl.addEventListener('pointerdown', (e) => {
+        if (gridZoom[i].scale <= 1) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return; // only the primary (left) button pans
+        e.preventDefault();
+        dragging = true;
+        imgEl.classList.add('dragging');
+        imgEl.setPointerCapture(e.pointerId);
+        startX = e.clientX; startY = e.clientY;
+        startPanX = gridZoom[i].x; startPanY = gridZoom[i].y;
+      });
+      imgEl.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        e.preventDefault();
+        gridZoom[i].x = startPanX + (e.clientX - startX);
+        gridZoom[i].y = startPanY + (e.clientY - startY);
+        applySlotTransform(i, imgEl);
+      });
+      const endDrag = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        imgEl.classList.remove('dragging');
+      };
+      imgEl.addEventListener('pointerup', endDrag);
+      imgEl.addEventListener('pointercancel', endDrag);
+      imgEl.addEventListener('contextmenu', (e) => e.preventDefault());
+      imgEl.addEventListener('click', () => {
+        if (gridZoom[i].scale === 1) setSlotZoom(i, 2);
+      });
+    });
+  }
+
+  function setSlotZoom(i, newScale){
+    newScale = Math.max(1, Math.min(4, newScale));
+    gridZoom[i].scale = newScale;
+    if (newScale === 1){ gridZoom[i].x = 0; gridZoom[i].y = 0; }
+    renderGrid();
+  }
+
+  function applySlotTransform(i, imgEl){
+    const z = gridZoom[i];
+    imgEl.style.transform = `translate(${z.x}px, ${z.y}px) scale(${z.scale})`;
+  }
+
+  // --- Lightbox: view large + click to mark findings ---
+  let markerShape = 'circle';
+  shapeToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    shapeToggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    markerShape = btn.dataset.shape;
+  });
+
+  function openLightbox(capId){
+    lightboxCapId = capId;
+    lightboxMarkers = [];
+    const cap = captures.find(c => c.id === capId);
+    if (!cap) return;
+    lightboxImg.src = cap.dataURL;
+    renderMarkers();
+    lightboxBackdrop.classList.add('active');
+  }
+  function closeLightbox(){
+    lightboxBackdrop.classList.remove('active');
+    lightboxCapId = null;
+  }
+  lightboxCloseBtn.addEventListener('click', closeLightbox);
+  lightboxBackdrop.addEventListener('click', (e) => {
+    if (e.target === lightboxBackdrop) closeLightbox();
+  });
+  function renderMarkers(){
+    lightboxImgWrap.querySelectorAll('.marker').forEach(m => m.remove());
+    lightboxMarkers.forEach((m, i) => {
+      const el = document.createElement('div');
+      el.className = 'marker shape-' + m.shape;
+      el.style.left = m.x + '%';
+      el.style.top = m.y + '%';
+      el.innerHTML = `<span>${i + 1}</span>`;
+      lightboxImgWrap.appendChild(el);
+    });
+  }
+  lightboxImgWrap.addEventListener('click', (e) => {
+    if (e.target.closest('.marker')) return;
+    const rect = lightboxImgWrap.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    lightboxMarkers.push({ x, y, shape: markerShape });
+    renderMarkers();
+  });
+  lightboxUndoBtn.addEventListener('click', () => {
+    lightboxMarkers.pop();
+    renderMarkers();
+  });
+
+  function drawMarkerShape(ctx, shape, px, py, r){
+    ctx.fillStyle = 'rgba(184,92,76,0.85)';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = r * 0.18;
+    if (shape === 'square'){
+      ctx.fillRect(px - r, py - r, r * 2, r * 2);
+      ctx.strokeRect(px - r, py - r, r * 2, r * 2);
+    } else if (shape === 'triangle'){
+      ctx.beginPath();
+      ctx.moveTo(px, py - r);
+      ctx.lineTo(px - r, py + r * 0.85);
+      ctx.lineTo(px + r, py + r * 0.85);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+
+  lightboxSaveBtn.addEventListener('click', () => {
+    const cap = captures.find(c => c.id === lightboxCapId);
+    if (!cap || lightboxMarkers.length === 0){ closeLightbox(); return; }
+    const img = new Image();
+    img.onload = () => {
+      captureCanvas.width = img.width;
+      captureCanvas.height = img.height;
+      const ctx = captureCanvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      lightboxMarkers.forEach((m, i) => {
+        const px = (m.x / 100) * img.width;
+        const py = (m.y / 100) * img.height;
+        const r = Math.max(img.width, img.height) * 0.018;
+        drawMarkerShape(ctx, m.shape, px, py, r);
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${Math.round(r)}px Work Sans, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const labelY = m.shape === 'triangle' ? py + r * 0.5 : py + r * 0.05;
+        ctx.fillText(String(i + 1), px, labelY);
+      });
+      cap.dataURL = captureCanvas.toDataURL('image/jpeg', 0.92);
+      closeLightbox();
+      renderGallery();
+      renderGrid();
+    };
+    img.src = cap.dataURL;
+  });
+
+  // --- Printable session report ---
+  reportBtn.addEventListener('click', () => {
+    if (!captures.length){ return; }
+    const patient = (patients[activePatientIndex] && patients[activePatientIndex].name) || 'Paciente sin nombre';
+    reportMeta.textContent = `${patient} · ${new Date().toLocaleDateString('es-EC', { day:'2-digit', month:'long', year:'numeric' })}`;
+    reportGrid.innerHTML = '';
+    captures.slice().reverse().forEach(cap => {
+      const item = document.createElement('div');
+      item.className = 'report-item';
+      item.innerHTML = `<img src="${cap.dataURL}" alt="${cap.tag}"><p style="font-weight:600; margin:8px 0 2px;">${cap.tag} · ${cap.time}</p><p style="font-size:0.85rem; color:#555; margin:0;">${cap.note || 'Sin notas'}</p>${cap.aiAnalysis ? `<p style="font-size:0.8rem; color:#3F6259; margin:6px 0 0; padding-top:6px; border-top:1px dashed #ccc;"><b>Sugerencia de IA:</b> ${escapeHtml(cap.aiAnalysis)}<br><em style="color:#888;">No es un diagnóstico.</em></p>` : ''}`;
+      reportGrid.appendChild(item);
+    });
+    window.print();
+  });
+
+  function downloadCapture(cap){
+    const a = document.createElement('a');
+    const patient = ((patients[activePatientIndex] && patients[activePatientIndex].name) || 'paciente').trim().replace(/\s+/g, '-').toLowerCase();
+    const tagSlug = cap.tag.replace(/\s+/g, '-').toLowerCase();
+    a.href = cap.dataURL;
+    a.download = `${patient}_${tagSlug}_${cap.id}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  downloadAllBtn.addEventListener('click', () => {
+    if (!captures.length) return;
+    captures.forEach((cap, i) => setTimeout(() => downloadCapture(cap), i * 250));
+  });
+
+  // --- Send to phone: uses the OS native share sheet (AirDrop, Nearby Share, WhatsApp, Bluetooth, etc.) ---
+  shareBtn.addEventListener('click', async () => {
+    if (!captures.length){
+      showToast('Primero toma al menos una captura.');
+      return;
+    }
+    if (!navigator.share || !navigator.canShare){
+      showToast('Tu navegador no admite enviar archivos. Usa "Descargar todas" y pásalas por correo, cable o la nube.');
+      return;
+    }
+    try {
+      const files = await Promise.all(captures.map(async (cap, i) => {
+        const res = await fetch(cap.dataURL);
+        const blob = await res.blob();
+        const tagSlug = cap.tag.replace(/\s+/g, '-').toLowerCase();
+        return new File([blob], `captura_${tagSlug}_${i + 1}.jpg`, { type: 'image/jpeg' });
+      }));
+      const patientName = patients[activePatientIndex] ? patients[activePatientIndex].name : 'paciente';
+      const shareData = { files, title: 'Capturas intraorales', text: `Capturas de ${patientName}` };
+      if (!navigator.canShare(shareData)){
+        showToast('Tu navegador no admite enviar varias imágenes a la vez. Usa "Descargar todas".');
+        return;
+      }
+      await navigator.share(shareData);
+    } catch (err){
+      if (err.name !== 'AbortError'){
+        showToast('No se pudo abrir el panel para compartir. Usa "Descargar todas" como alternativa.');
+      }
+    }
+  });
+
+  clearGalleryBtn.addEventListener('click', () => {
+    if (!captures.length) return;
+    if (confirm('¿Vaciar todas las capturas de este paciente? Esta acción no se puede deshacer.')){
+      captures = [];
+      if (activePatientIndex !== -1) patients[activePatientIndex].captures = captures;
+      gridSlots = [null, null, null, null];
+      renderGallery();
+      renderGrid();
+    }
+  });
+
+
+  tagChips.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    tagChips.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    activeTag = chip.dataset.tag;
+  });
+
+  captureBtn.addEventListener('click', captureFrame);
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && appBody.style.display !== 'none' && document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.tagName !== 'INPUT'){
+      e.preventDefault();
+      captureFrame();
+    }
+  });
+
+  renderGallery();
+  renderGrid();
+})();
+</script>
+
+</body>
+</html>
